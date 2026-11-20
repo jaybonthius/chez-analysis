@@ -42,7 +42,7 @@
 
   (define akku-directory ".akku/lib")
 
-  ;; Without .git or .chez-tools the project is a directory the user happens
+  ;; Without .git or .cz the project is a directory the user happens
   ;; to be in, which may be a home directory.
   (define fallback-entry-limit 20000)
 
@@ -196,7 +196,7 @@
       (walk! root (let ([repository (enclosing-repository root)])
                     (if repository (submodule-paths repository note-stamp!) '())))
       (when (stopped?)
-        (note! "~a has no .git or .chez-tools; library inference stopped after ~a files and directories; add a .chez-tools with (root)"
+        (note! "~a has no .git or .cz; library inference stopped after ~a files and directories; add a .cz with (root)"
           root entries))
       (let* ([files (list-sort library-file<?
                       (apply append
@@ -356,7 +356,7 @@
       (append
         (list (format "project ~a (found by ~a)" (config-root config)
                 (case (config-root-marker config)
-                  [(configuration) "its .chez-tools file"]
+                  [(configuration) "its .cz file"]
                   [(git) "its git repository"]
                   [else "the fallback directory"]))
               (format "library directories (~a): ~{~a~^ ~}"

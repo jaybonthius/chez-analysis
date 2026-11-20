@@ -12,7 +12,7 @@
     (call-with-output-file file (lambda (out) (put-string out text)) 'truncate))
 
   (define (make-project name entries)
-    (let ([root (format "/tmp/chez-tools-~a-~a" name (process-id))])
+    (let ([root (format "/tmp/cz-~a-~a" name (process-id))])
       (system (format "rm -rf '~a'" root))
       (for-each (lambda (e) (write-text! (string-append root "/" (car e)) (cdr e))) entries)
       (new-project root)))

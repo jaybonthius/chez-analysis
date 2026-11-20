@@ -28,7 +28,7 @@
   (define-enumeration file-kind (library program script include) file-kind-set)
   (define-enumeration root-marker (configuration git fallback) root-marker-set)
 
-  (define config-file-name ".chez-tools")
+  (define config-file-name ".cz")
 
   (define-condition-type &config-error &error make-config-error config-error?
     (path config-error-path) (start config-error-start) (end config-error-end))
@@ -77,7 +77,7 @@
     (fields value start end))
 
   (define (config-error path start end fmt . args)
-    (raise (condition (make-config-error path start end) (make-who-condition 'chez-tools)
+    (raise (condition (make-config-error path start end) (make-who-condition 'cz)
              (make-message-condition (apply format fmt args)))))
 
   ;; The file is data: only these forms are accepted, and nothing in it is
@@ -444,8 +444,8 @@
         stamp)))
 
   ;; The search stops at a repository unless the repository above lists it
-  ;; as a submodule and is a Chez project itself (it has a .chez-tools file
-  ;; at its root, or is such a submodule): a repository with no .chez-tools
+  ;; as a submodule and is a Chez project itself (it has a .cz file
+  ;; at its root, or is such a submodule): a repository with no .cz
   ;; may be a container of unrelated projects, and its submodules must not
   ;; be absorbed into it. Every file this depends on is kept with its stamp,
   ;; and every place a file was looked for and not found, so a change to
@@ -498,7 +498,7 @@
                        (for-each
                          (lambda (it)
                            (set! notes
-                             (cons (format "~a: ~a is ignored, because this file belongs to a submodule of the project at ~a, whose own .chez-tools sets the library layout"
+                             (cons (format "~a: ~a is ignored, because this file belongs to a submodule of the project at ~a, whose own .cz sets the library layout"
                                      (file-entries-path entry) (entry-name it) (file-entries-dir root-entry))
                                    notes)))
                          (file-entries-layout-items entry))
@@ -506,7 +506,7 @@
                       [else
                        (let ([it (car (file-entries-layout-items entry))])
                          (config-error (file-entries-path entry) (item-start it) (item-end it)
-                           "~a is accepted only in the project's root .chez-tools, ~a"
+                           "~a is accepted only in the project's root .cz, ~a"
                            (entry-name it) (file-entries-path root-entry)))])))
                 (let ([checked (map role-checked found)])
                   (merge-entries (reverse checked)

@@ -1,5 +1,5 @@
 (define libc
-  (guard (c [#t (errorf 'chez-tools "this program runs only on Linux with the GNU C library (libc.so.6)")])
+  (guard (c [#t (errorf 'cz "this program runs only on Linux with the GNU C library (libc.so.6)")])
     (load-shared-object "libc.so.6")))
 
 (define-condition-type &posix-error &error make-posix-error posix-error?

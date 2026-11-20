@@ -95,7 +95,7 @@
 
 
 (define temporary-root
-  (let ([dir (format "/tmp/chez-tools-posix-test-~a" (process-id))])
+  (let ([dir (format "/tmp/cz-posix-test-~a" (process-id))])
     (system (format "rm -rf ~a; mkdir -p ~a" dir dir))
     dir))
 
@@ -201,7 +201,7 @@
       (when limit (check (<= budget limit))))
     (let ([cg (let ([line (call-with-input-file "/proc/self/cgroup" get-line)])
                 (string-append "/sys/fs/cgroup" (substring line 3 (string-length line))))]
-          [child (format "chez-tools-test-~a" (process-id))])
+          [child (format "cz-test-~a" (process-id))])
       (if (guard (c [#t #f]) (mkdir (string-append cg "/" child)) #t)
           (let ([file (temporary-file "probe.ss")])
             (call-with-output-file file
@@ -289,7 +289,7 @@
 (system (format "rm -rf ~a" temporary-root))
 
 (test "a directory's lock is held by one open at a time, is free once that is closed, and delete-tree! removes it"
-  (let* ([dir (make-temporary-directory (format "/tmp/chez-tools-lock-~a-" (process-id)))]
+  (let* ([dir (make-temporary-directory (format "/tmp/cz-lock-~a-" (process-id)))]
          [held (lock-directory dir #t)])
     (check (fixnum? held))
     (check-equal? #f (lock-directory dir #f))

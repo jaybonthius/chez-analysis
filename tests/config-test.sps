@@ -1,16 +1,16 @@
 (import (chezscheme) (check) (analysis config) (analysis posix) (analysis path))
 
 (define root
-  (let ([dir (format "/tmp/chez-tools-config-test-~a" (process-id))])
+  (let ([dir (format "/tmp/cz-config-test-~a" (process-id))])
     (system (format "rm -rf ~a; mkdir -p ~a/a/b/c" dir dir))
     dir))
 
 (define (write-config! dir text)
-  (call-with-output-file (string-append dir "/.chez-tools")
+  (call-with-output-file (string-append dir "/.cz")
     (lambda (out) (put-string out text))
     'truncate))
 
-(define (remove-config! dir) (delete-file (string-append dir "/.chez-tools")))
+(define (remove-config! dir) (delete-file (string-append dir "/.cz")))
 
 (define (config-error-at text)
   (write-config! (string-append root "/a") text)
@@ -28,8 +28,8 @@
     (check-equal? #t (config-case-sensitive? c))
     (check-equal? '() (config-preload c))
     (check-equal? '() (config-files c))
-    (check (member (string-append root "/a/b/.chez-tools") (config-absent-files c)))
-    (check (member "/.chez-tools" (config-absent-files c)))
+    (check (member (string-append root "/a/b/.cz") (config-absent-files c)))
+    (check (member "/.cz" (config-absent-files c)))
     (let ([w (config-worker-limits c)])
       (check-equal? (* 4096 1024 1024) (worker-limits-memory w))
       (check-equal? (quotient (memory-budget-bytes) 2) (worker-limits-memory-budget w))
@@ -40,11 +40,11 @@
       (check-equal? #f (lint-settings-undefined-variable-warnings? l)))))
 
 (test "every entry decodes"
-  (putenv "CHEZ_TOOLS_CONFIG_TEST" "/x/lib::/x/obj:rel")
+  (putenv "CZ_CONFIG_TEST" "/x/lib::/x/obj:rel")
   (write-config! (string-append root "/a")
     (string-append
       "(root)\n"
-      "(library-directories \"src\" \"/abs\" (environment-variable \"CHEZ_TOOLS_CONFIG_TEST\"))\n"
+      "(library-directories \"src\" \"/abs\" (environment-variable \"CZ_CONFIG_TEST\"))\n"
       "(library-extensions \".sls\" \".ss\")\n"
       "(source-extensions \".sls\" \".sps\")\n"
       "(exclude \"build/**\")\n"
@@ -63,7 +63,7 @@
   (let* ([a (string-append root "/a")] [c (find-project-config (string-append a "/b/x.ss") "/")])
     (check-equal? a (config-root c))
     (check-equal? (list (string-append a "/src") "/abs" "/x/lib" (string-append a "/rel")) (config-library-directories c))
-    (check-equal? '(("CHEZ_TOOLS_CONFIG_TEST" . "/x/lib::/x/obj:rel")) (config-environment c))
+    (check-equal? '(("CZ_CONFIG_TEST" . "/x/lib::/x/obj:rel")) (config-environment c))
     (check-equal? '(".sls" ".ss") (config-library-extensions c))
     (check-equal? '(".sls" ".sps") (config-source-extensions c))
     (check (config-excluded? c (string-append a "/build/obj/x.so")))
@@ -105,10 +105,10 @@
     (check-equal? #f (config-case-sensitive? c))
     (check-equal? '(3 4) (list (worker-limits-timeout (config-worker-limits c))
                                (worker-limits-analyses (config-worker-limits c))))
-    (check-equal? (list (string-append root "/a/b/.chez-tools") (string-append root "/.chez-tools"))
+    (check-equal? (list (string-append root "/a/b/.cz") (string-append root "/.cz"))
       (map car (config-files c)))
-    (check (member (string-append root "/a/b/c/.chez-tools") (config-absent-files c)))
-    (check (member (string-append root "/a/.chez-tools") (config-absent-files c))))
+    (check (member (string-append root "/a/b/c/.cz") (config-absent-files c)))
+    (check (member (string-append root "/a/.cz") (config-absent-files c))))
   (write-config! (string-append root "/a") "(root) (case-sensitive #t)")
   (let ([c (find-project-config (string-append root "/a/b/c/x.ss") "/")])
     (check-equal? (string-append root "/a") (config-root c))
@@ -119,7 +119,7 @@
 (test "the library layout is set only in the project's root file"
   (write-config! root "(case-sensitive #f)")
   (write-config! (string-append root "/a") "(worker (timeout 3))\n(exclude \"x/**\")")
-  (check-equal? (list 21 37 (format "exclude is accepted only in the project's root .chez-tools, ~a/.chez-tools" root))
+  (check-equal? (list 21 37 (format "exclude is accepted only in the project's root .cz, ~a/.cz" root))
     (guard (c [(config-error? c) (list (config-error-start c) (config-error-end c) (condition-message c))])
       (find-project-config (string-append root "/a/b/x.ss") "/")
       'no-error))
@@ -145,7 +145,7 @@
       (check-equal? #t (config-case-sensitive? c)))
     (remove-config! root)))
 
-(test "a submodule belongs to the enclosing project only when that project has a root .chez-tools"
+(test "a submodule belongs to the enclosing project only when that project has a root .cz"
   (let ([outer (fresh-tree "submodule")])
     (git-repository! outer)
     (write-file! (string-append outer "/sub/.git") "gitdir: ../.git/modules/sub\n")
@@ -153,7 +153,7 @@
     (let ([c (find-project-config (string-append outer "/sub/x.ss") "/")])
       (check-equal? (string-append outer "/sub") (config-root c))
       (check-equal? 'git (config-root-marker c))
-      (check (member (string-append outer "/.chez-tools") (config-absent-files c))))
+      (check (member (string-append outer "/.cz") (config-absent-files c))))
     (write-config! outer "")
     (write-config! (string-append outer "/sub") "(library-directories \"lib\") (case-sensitive #f)")
     (let ([c (find-project-config (string-append outer "/sub/inner/x.ss") "/")])
@@ -161,7 +161,7 @@
       (check-equal? 'configuration (config-root-marker c))
       (check-equal? #f (config-library-directories c))
       (check-equal? #f (config-case-sensitive? c))
-      (check-equal? (list (format "~a/sub/.chez-tools: library-directories is ignored, because this file belongs to a submodule of the project at ~a, whose own .chez-tools sets the library layout" outer outer))
+      (check-equal? (list (format "~a/sub/.cz: library-directories is ignored, because this file belongs to a submodule of the project at ~a, whose own .cz sets the library layout" outer outer))
         (config-notes c))
       (check (assoc (string-append outer "/.gitmodules") (config-files c))))
     (write-config! (string-append outer "/sub") "(root)")
@@ -193,13 +193,13 @@
     (delete-file (string-append outer "/sub/.git"))
     (mkdir (string-append outer "/sub/.git"))
     (check-equal? outer (config-root (find-project-config (string-append outer "/sub/nested/x.ss") "/")))
-    (delete-file (string-append outer "/.chez-tools"))
+    (delete-file (string-append outer "/.cz"))
     (check-equal? (string-append outer "/sub/nested")
       (config-root (find-project-config (string-append outer "/sub/nested/x.ss") "/")))))
 
 (test "a file read alone has its directory as its root"
   (write-config! (string-append root "/a/b") "(library-directories \"lib\")")
-  (let ([c (read-config-file (string-append root "/a/b/.chez-tools"))])
+  (let ([c (read-config-file (string-append root "/a/b/.cz"))])
     (check-equal? (string-append root "/a/b") (config-root c))
     (check-equal? (list (string-append root "/a/b/lib")) (config-library-directories c)))
   (remove-config! (string-append root "/a/b")))

@@ -46,7 +46,7 @@
 (define (run-corpora)
   (let ([dirs (corpus-directories)])
     (when (null? dirs)
-      (printf "corpora: skipped, CHEZ_TOOLS_CORPORA is not set\n"))
+      (printf "corpora: skipped, CZ_CORPORA is not set\n"))
     (for-each
       (lambda (dir)
         (let ([t (new-tally dir)])

@@ -1,7 +1,7 @@
 (import (chezscheme) (reader-oracle) (analysis text) (analysis reader) (analysis diagnostic))
 
 (define mutant-count
-  (let ([v (getenv "CHEZ_TOOLS_MUTANTS")]) (if v (string->number v) 1000000)))
+  (let ([v (getenv "CZ_MUTANTS")]) (if v (string->number v) 1000000)))
 
 (random-seed 20261106)
 
@@ -94,7 +94,7 @@
 
 (let ([dirs (corpus-directories)])
   (if (null? dirs)
-      (printf "reader fuzzing: skipped, CHEZ_TOOLS_CORPORA is not set\n")
+      (printf "reader fuzzing: skipped, CZ_CORPORA is not set\n")
       (let ([files (apply append (map corpus-files dirs))])
         (run-mutants files)
         (for-each

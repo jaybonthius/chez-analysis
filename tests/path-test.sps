@@ -22,7 +22,7 @@
   (check-raises assertion-violation? (path->uri "relative/x")))
 
 (test "canonical paths resolve links and normalise absent files"
-  (let ([dir (format "/tmp/chez-tools-path-test-~a" (random 1000000000))])
+  (let ([dir (format "/tmp/cz-path-test-~a" (random 1000000000))])
     (mkdir dir)
     (mkdir (string-append dir "/real"))
     (call-with-output-file (string-append dir "/real/f.ss") (lambda (p) (display "x" p)))

@@ -89,7 +89,7 @@
 
 (test "library-directories in the configuration wins, is used exactly and reports no ambiguity"
   (let ([p (make-project "layout-explicit"
-             (list (cons ".chez-tools" "(root) (library-directories \"src\" \"other\")\n")
+             (list (cons ".cz" "(root) (library-directories \"src\" \"other\")\n")
                    (cons "src/a.sls" (library-text "(a)"))
                    (cons "other/a.sls" (library-text "(a)"))
                    (cons "tests/t.sls" (library-text "(t)"))))])
@@ -119,32 +119,32 @@
       (check-equal? (list (string-append "ambiguous (a): " (project-file p "src/a.sls") " in root " (project-file p "src")
                             ", " (project-file p "test/data/a.sls") " in root " (project-file p "test/data")))
         (filter (lambda (line) (contains? "ambiguous" line)) (project-layout->lines layout))))
-    (write-project-file! p ".chez-tools" "(exclude \"test/data/**\")\n")
+    (write-project-file! p ".cz" "(exclude \"test/data/**\")\n")
     (check-equal? '() (project-layout-ambiguous (layout-of p)))
     (remove-project! p)))
 
 (test "inference enters listed submodules and stops at other repositories and nested projects"
   (let ([p (make-project "layout-repositories"
-             (list (cons ".chez-tools" "")
+             (list (cons ".cz" "")
                    (cons ".gitmodules" "[submodule \"vendor/v\"]\n\tpath = vendor/v\n")
                    (cons "src/a.sls" (library-text "(a)"))
                    (cons "vendor/v/.git" "gitdir: ../../.git/modules/vendor/v\n")
                    (cons "vendor/v/lib/v.sls" (library-text "(v)"))
                    (cons "checkout/.git" "gitdir: ../.git/worktrees/checkout\n")
                    (cons "checkout/src/a.sls" (library-text "(a)"))
-                   (cons "nested/.chez-tools" "(root)\n")
+                   (cons "nested/.cz" "(root)\n")
                    (cons "nested/src/a.sls" (library-text "(a)"))))])
     (mkdir (project-file p ".git"))
     (let ([layout (layout-of p)])
       (check-equal? (under p "src" "vendor/v/lib") (project-layout-library-directories layout))
       (check-equal? '() (project-layout-ambiguous layout)))
-    (write-project-file! p ".chez-tools" "(exclude \"vendor/v/**\")\n")
+    (write-project-file! p ".cz" "(exclude \"vendor/v/**\")\n")
     (check-equal? (under p "src") (project-layout-library-directories (layout-of p)))
     (remove-project! p)))
 
 (test "a layout is current until a library file or a directory changes, and is recomputed from the changes"
   (let ([p (make-project "layout-stamps"
-             (list (cons ".chez-tools" "(root)\n")
+             (list (cons ".cz" "(root)\n")
                    (cons "src/a.sls" (library-text "(a)"))))])
     (let ([layout (layout-of p)])
       (check (project-layout-current? layout))
@@ -162,11 +162,11 @@
 
 (test "the published layout says how it was obtained"
   (let ([p (make-project "layout-report"
-             (list (cons ".chez-tools" "(root)\n")
+             (list (cons ".cz" "(root)\n")
                    (cons "src/a.sls" (library-text "(a)"))))])
     (let ([layout (layout-of p)])
       (check-equal?
-        (list (format "project ~a (found by its .chez-tools file)" (project-root p))
+        (list (format "project ~a (found by its .cz file)" (project-root p))
               (format "library directories (inferred from library headers): ~a" (project-file p "src"))
               "library extensions: .chezscheme.sls .ss .sls .scm .sch")
         (project-layout->lines layout))
@@ -205,7 +205,7 @@
 
 (test "a parent with two submodules is one project with one layout, wherever the search starts"
   (let ([p (make-project "layout-parent"
-             (list (cons ".chez-tools" "")
+             (list (cons ".cz" "")
                    (cons ".gitmodules" "[submodule \"one\"]\n\tpath = one\n[submodule \"two\"]\n\tpath = two\n")
                    (cons "one/lib/x.sls" (library-text "(x)"))
                    (cons "two/lib/y.sls" "(library (y) (export) (import (chezscheme) (x)))\n")))])
@@ -223,26 +223,26 @@
     (putenv "CHEZSCHEMELIBDIRS" "/x/lib")
     (check-equal? '("CHEZSCHEMELIBDIRS is set to /x/lib and ignored; to use it, write (environment-variable \"CHEZSCHEMELIBDIRS\") in library-directories")
       (project-layout-notes (layout-of p)))
-    (write-project-file! p ".chez-tools" "(library-directories \"src\" (environment-variable \"CHEZSCHEMELIBDIRS\"))\n")
+    (write-project-file! p ".cz" "(library-directories \"src\" (environment-variable \"CHEZSCHEMELIBDIRS\"))\n")
     (check-equal? '() (project-layout-notes (layout-of p)))
     (putenv "CHEZSCHEMELIBDIRS" "")
     (remove-project! p)))
 
-(test "without .git or .chez-tools, inference stops after 20000 files and directories and says so"
+(test "without .git or .cz, inference stops after 20000 files and directories and says so"
   (let ([p (make-project "layout-unbounded" '())])
     (system (format "mkdir -p '~a/many' && cd '~a/many' && seq 1 20001 | xargs touch" (project-root p) (project-root p)))
     (write-project-file! p "src/a.sls" (library-text "(a)"))
     (let ([layout (layout-of p)])
       (check-equal? '() (project-layout-library-directories layout))
-      (check-equal? (list (format "~a has no .git or .chez-tools; library inference stopped after 20000 files and directories; add a .chez-tools with (root)"
+      (check-equal? (list (format "~a has no .git or .cz; library inference stopped after 20000 files and directories; add a .cz with (root)"
                             (project-root p)))
         (project-layout-notes layout)))
-    (write-project-file! p ".chez-tools" "(root)\n")
+    (write-project-file! p ".cz" "(root)\n")
     (check-equal? (under p "src") (project-layout-library-directories (layout-of p)))
     (remove-project! p)))
 
 (test "a directory that cannot be read is named in the notes, and the rest of the layout is computed"
-  (let ([p (make-project "layout-unreadable" (list (cons ".chez-tools" "(root)\n") (cons "src/a.sls" (library-text "(a)"))
+  (let ([p (make-project "layout-unreadable" (list (cons ".cz" "(root)\n") (cons "src/a.sls" (library-text "(a)"))
                                                    (cons "locked/b.sls" (library-text "(b)"))))])
     (chmod (project-file p "locked") 0)
     (let ([layout (layout-of p)])
@@ -254,7 +254,7 @@
     (remove-project! p)))
 
 (test "a layout stays current while a directory stays unreadable, and is not current once that changes"
-  (let ([p (make-project "layout-unreadable-current" (list (cons ".chez-tools" "(root)\n") (cons "src/a.sls" (library-text "(a)"))
+  (let ([p (make-project "layout-unreadable-current" (list (cons ".cz" "(root)\n") (cons "src/a.sls" (library-text "(a)"))
                                                            (cons "locked/b.sls" (library-text "(b)"))))])
     (let ([readable (layout-of p)])
       (chmod (project-file p "locked") 0)
@@ -270,7 +270,7 @@
     (remove-project! p)))
 
 (test "layouts that differ only in their notes are the same for an analysis"
-  (let ([p (make-project "layout-notes-only" (list (cons ".chez-tools" "(root)\n") (cons "src/a.sls" (library-text "(a)"))))])
+  (let ([p (make-project "layout-notes-only" (list (cons ".cz" "(root)\n") (cons "src/a.sls" (library-text "(a)"))))])
     (mkdir (project-file p "locked"))
     (let ([readable (layout-of p)])
       (chmod (project-file p "locked") 0)

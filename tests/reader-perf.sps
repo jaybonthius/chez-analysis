@@ -18,7 +18,7 @@
 (let ([dir (s-directory)])
   (if (not dir)
       (begin
-        (printf "reader performance: skipped, no corpus in CHEZ_TOOLS_CORPORA holds Chez's s/read.ss\n")
+        (printf "reader performance: skipped, no corpus in CZ_CORPORA holds Chez's s/read.ss\n")
         (exit 0))
       (let* ([files (filter (lambda (p) (equal? (path-extension p) "ss"))
                             (corpus-files (string-append dir "/s")))]

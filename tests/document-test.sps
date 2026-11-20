@@ -1,7 +1,7 @@
 (import (chezscheme) (check) (fixtures) (analysis config) (analysis document) (analysis text))
 
 (test "a file headed by import is a guessed script unless its configuration, its extension or a #! line gives its kind"
-  (let* ([p (make-project "file-kinds" (list (cons ".chez-tools" "(root)\n(file-kind \"configured*.ss\" program)\n(file-kind \"given-script.ss\" script)\n")))]
+  (let* ([p (make-project "file-kinds" (list (cons ".cz" "(root)\n(file-kind \"configured*.ss\" program)\n(file-kind \"given-script.ss\" script)\n")))]
          [config (find-project-config (project-file p "x.ss") (project-root p))]
          [kind (lambda (name text)
                  (let* ([path (project-file p name)] [c (read-document config path (make-text text))])
